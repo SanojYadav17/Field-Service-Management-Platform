@@ -62,8 +62,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectWorkOrder 
           <p className="text-xs text-slate-500 mt-1">Real-time SLA tracking, dispatch metrics, and field team health</p>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button onClick={loadData} className="ks-btn-secondary text-xs h-9 px-3.5 shadow-2xs">
+          <button
+            onClick={loadData}
+            title="Refresh All Dashboard Data"
+            disabled={loading}
+            className="ks-btn-secondary text-xs h-9 px-3.5 shadow-2xs hover:bg-sky-50 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-70"
+          >
             <RefreshCw size={14} className={loading ? 'animate-spin text-sky-600' : 'text-sky-600'} />
+            <span className="font-semibold text-slate-700">{loading ? 'Refreshing...' : 'Refresh'}</span>
           </button>
           <button
             onClick={() => setIsQuickDispatchOpen(true)}
@@ -74,7 +80,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectWorkOrder 
         </div>
       </div>
 
-      {/* Emergency SLA Breached Alert Banner */}
+      <div className={`space-y-7 transition-opacity duration-300 ${loading ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
+        {/* Emergency SLA Breached Alert Banner */}
       {breachedOrders.length > 0 && (
         <div className="p-4 bg-red-500/10 border border-red-200 text-red-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
@@ -173,6 +180,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectWorkOrder 
           </div>
         </div>
         <KanbanBoard workOrders={workOrders} onSelectWorkOrder={onSelectWorkOrder} onRefresh={loadData} />
+      </div>
       </div>
 
       {/* Quick Dispatch Modal */}

@@ -373,12 +373,14 @@ module.exports = async (req, res) => {
     }
 
     if ((pathname === '/api/work-orders' || pathname.endsWith('/work-orders')) && method === 'POST') {
+      const decoded = authenticateToken(req);
       const body = await parseJsonBody(req);
       const code = `WO-${Math.floor(100000 + Math.random() * 900000)}`;
+      const createdById = decoded ? decoded.id : 1;
       const result = await p.query(
-        `INSERT INTO work_orders (code, title, description, priority, status, customer_id, site_id, assigned_to_id, sla_due_at, created_at)
-         VALUES ($1, $2, $3, $4, 'NEW', $5, $6, $7, NOW() + INTERVAL '24 hour', NOW()) RETURNING *`,
-        [code, body.title, body.description, body.priority || 'MEDIUM', body.customerId || 1, body.siteId || 1, body.assignedToId || null]
+        `INSERT INTO work_orders (code, title, description, priority, status, customer_id, site_id, assigned_to_id, created_by_id, sla_due_at, total_parts_cost, total_labour_minutes, created_at)
+         VALUES ($1, $2, $3, $4, 'NEW', $5, $6, $7, $8, NOW() + INTERVAL '24 hour', 0.00, 0, NOW()) RETURNING *`,
+        [code, body.title, body.description || '', body.priority || 'MEDIUM', body.customerId || 1, body.siteId || 1, body.assignedToId || null, createdById]
       );
       return res.status(201).json(result.rows[0]);
     }

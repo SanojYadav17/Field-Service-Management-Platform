@@ -61,6 +61,7 @@ export const QuickDispatchModal: React.FC<QuickDispatchModalProps> = ({
     try {
       await api.assignWorkOrder(woId, techId);
       setSuccessMsg(`Ticket dispatched to technician!`);
+      setUnassignedOrders(prev => prev.filter(w => w.id !== woId));
       setTimeout(() => setSuccessMsg(null), 3000);
       onSuccess();
     } catch (err: any) {

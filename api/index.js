@@ -385,6 +385,100 @@ module.exports = async (req, res) => {
       return res.status(201).json(result.rows[0]);
     }
 
+    // DYNAMIC WORK ORDER ACTION ROUTES
+    const assignMatch = pathname.match(/\/work-orders\/(\d+)\/assign\/(\d+)/);
+    if (assignMatch && method === 'PATCH') {
+      const woId = parseInt(assignMatch[1], 10);
+      const techId = parseInt(assignMatch[2], 10);
+      const updated = await p.query(
+        `UPDATE work_orders SET assigned_to_id = $1, status = 'ASSIGNED', updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [techId, woId]
+      );
+      await p.query(
+        `INSERT INTO work_order_status_history (work_order_id, from_status, to_status, note, changed_at) VALUES ($1, 'NEW', 'ASSIGNED', $2, NOW())`,
+        [woId, `Assigned to technician #${techId}`]
+      );
+      return res.status(200).json(updated.rows[0]);
+    }
+
+    const statusMatch = pathname.match(/\/work-orders\/(\d+)\/status/);
+    if (statusMatch && method === 'PATCH') {
+      const woId = parseInt(statusMatch[1], 10);
+      const { newStatus, note } = await parseJsonBody(req);
+      const oldWo = await p.query('SELECT status FROM work_orders WHERE id = $1', [woId]);
+      const oldStatus = oldWo.rows.length > 0 ? oldWo.rows[0].status : 'NEW';
+      const updated = await p.query(
+        `UPDATE work_orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [newStatus, woId]
+      );
+      await p.query(
+        `INSERT INTO work_order_status_history (work_order_id, from_status, to_status, note, changed_at) VALUES ($1, $2, $3, $4, NOW())`,
+        [woId, oldStatus, newStatus, note || `Status updated to ${newStatus}`]
+      );
+      return res.status(200).json(updated.rows[0]);
+    }
+
+    const partsMatch = pathname.match(/\/work-orders\/(\d+)\/parts/);
+    if (partsMatch && method === 'POST') {
+      const woId = parseInt(partsMatch[1], 10);
+      const { partId, qty } = await parseJsonBody(req);
+      const partRes = await p.query('SELECT unit_cost, stock_qty FROM parts WHERE id = $1', [partId]);
+      if (partRes.rows.length === 0) return res.status(404).json({ message: 'Part not found' });
+      const unitCost = parseFloat(partRes.rows[0].unit_cost) || 0.0;
+      const lineTotal = unitCost * qty;
+      await p.query(
+        `INSERT INTO part_usages (work_order_id, part_id, qty_used, unit_cost_at_time, line_total, created_at) VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [woId, partId, qty, unitCost, lineTotal]
+      );
+      await p.query('UPDATE parts SET stock_qty = GREATEST(0, stock_qty - $1), updated_at = NOW() WHERE id = $2', [qty, partId]);
+      await p.query('UPDATE work_orders SET total_parts_cost = COALESCE(total_parts_cost, 0) + $1, updated_at = NOW() WHERE id = $2', [lineTotal, woId]);
+      return res.status(201).json({ message: 'Part logged successfully' });
+    }
+
+    const getPartsMatch = pathname.match(/\/work-orders\/(\d+)\/parts/);
+    if (getPartsMatch && method === 'GET') {
+      const woId = parseInt(getPartsMatch[1], 10);
+      const usages = await p.query(
+        `SELECT pu.id, pu.qty_used as "qtyUsed", pu.unit_cost_at_time as "unitCostAtTime", pu.line_total as "lineTotal", pu.created_at as "createdAt", p.name as "partName", p.sku as "partSku" FROM part_usages pu LEFT JOIN parts p ON pu.part_id = p.id WHERE pu.work_order_id = $1 ORDER BY pu.id DESC`,
+        [woId]
+      );
+      return res.status(200).json(usages.rows);
+    }
+
+    const timeMatch = pathname.match(/\/work-orders\/(\d+)\/time/);
+    if (timeMatch && method === 'POST') {
+      const woId = parseInt(timeMatch[1], 10);
+      const decoded = authenticateToken(req);
+      const { minutes, note } = await parseJsonBody(req);
+      const techId = decoded ? decoded.id : null;
+      await p.query(
+        `INSERT INTO time_logs (work_order_id, technician_id, minutes, note, logged_at) VALUES ($1, $2, $3, $4, NOW())`,
+        [woId, techId, minutes, note || '']
+      );
+      await p.query('UPDATE work_orders SET total_labour_minutes = COALESCE(total_labour_minutes, 0) + $1, updated_at = NOW() WHERE id = $2', [minutes, woId]);
+      return res.status(201).json({ message: 'Time logged successfully' });
+    }
+
+    const getLogsMatch = pathname.match(/\/work-orders\/(\d+)\/timelogs/);
+    if (getLogsMatch && method === 'GET') {
+      const woId = parseInt(getLogsMatch[1], 10);
+      const logs = await p.query(
+        `SELECT tl.id, tl.minutes, tl.note, tl.logged_at as "loggedAt", u.full_name as "technicianName" FROM time_logs tl LEFT JOIN users u ON tl.technician_id = u.id WHERE tl.work_order_id = $1 ORDER BY tl.id DESC`,
+        [woId]
+      );
+      return res.status(200).json(logs.rows);
+    }
+
+    const historyMatch = pathname.match(/\/work-orders\/(\d+)\/history/);
+    if (historyMatch && method === 'GET') {
+      const woId = parseInt(historyMatch[1], 10);
+      const history = await p.query(
+        `SELECT id, from_status as "fromStatus", to_status as "toStatus", note, changed_at as "changedAt" FROM work_order_status_history WHERE work_order_id = $1 ORDER BY id DESC`,
+        [woId]
+      );
+      return res.status(200).json(history.rows);
+    }
+
     // ----------------------------------------------------
     // CUSTOMERS & SITES ROUTES
     // ----------------------------------------------------

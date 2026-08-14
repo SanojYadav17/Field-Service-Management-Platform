@@ -49,7 +49,7 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
-  if (loading && !analytics) {
+  if (loading || !analytics) {
     return (
       <div className="p-16 flex flex-col items-center justify-center text-slate-500 text-xs space-y-3">
         <RefreshCw className="animate-spin text-sky-600" size={24} />
@@ -58,7 +58,7 @@ export const ReportsPage: React.FC = () => {
     );
   }
 
-  const { technicianLeaderboard, slaPriorityBreakdown, topInventoryConsumption, summary } = analytics!;
+  const { technicianLeaderboard = [], slaPriorityBreakdown = [], topInventoryConsumption = [], summary } = analytics;
 
   return (
     <div className="space-y-7">

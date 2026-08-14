@@ -491,12 +491,14 @@ export default async function handler(req, res) {
     // ----------------------------------------------------
     if ((pathname === '/api/customers' || pathname.endsWith('/customers')) && method === 'GET') {
       await p.query('ALTER TABLE customers ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255)');
+      await p.query('ALTER TABLE customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
       const customers = await p.query('SELECT id, name, code, contact_person as "contactPerson", contact_email as "contactEmail", contact_phone as "contactPhone", address, active FROM customers ORDER BY id ASC');
       return res.status(200).json(customers.rows);
     }
 
     if ((pathname === '/api/customers' || pathname.endsWith('/customers')) && method === 'POST') {
       await p.query('ALTER TABLE customers ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255)');
+      await p.query('ALTER TABLE customers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
       const body = await parseJsonBody(req);
       const result = await p.query(
         'INSERT INTO customers (name, code, contact_person, contact_email, contact_phone, address, active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW()) RETURNING *',
@@ -506,6 +508,8 @@ export default async function handler(req, res) {
     }
 
     if ((pathname === '/api/sites' || pathname.endsWith('/sites')) && method === 'GET') {
+      await p.query('ALTER TABLE sites ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255)');
+      await p.query('ALTER TABLE sites ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
       const sites = await p.query(`
         SELECT s.id, s.name, s.address, s.customer_id as "customerId", s.contact_person as "contactPerson", s.active, c.name as "customerName"
         FROM sites s LEFT JOIN customers c ON s.customer_id = c.id ORDER BY s.id ASC
@@ -514,6 +518,8 @@ export default async function handler(req, res) {
     }
 
     if ((pathname === '/api/sites' || pathname.endsWith('/sites')) && method === 'POST') {
+      await p.query('ALTER TABLE sites ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255)');
+      await p.query('ALTER TABLE sites ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
       const body = await parseJsonBody(req);
       const result = await p.query(
         'INSERT INTO sites (name, address, customer_id, contact_person, active, created_at, updated_at) VALUES ($1, $2, $3, $4, true, NOW(), NOW()) RETURNING *',
@@ -526,11 +532,13 @@ export default async function handler(req, res) {
     // PARTS / INVENTORY ROUTES
     // ----------------------------------------------------
     if ((pathname === '/api/parts' || pathname.endsWith('/parts')) && method === 'GET') {
+      await p.query('ALTER TABLE parts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
       const parts = await p.query('SELECT id, name, sku, unit_cost::float as "unitCost", stock_qty as "stockQty", min_stock_level as "minStockLevel" FROM parts ORDER BY id ASC');
       return res.status(200).json(parts.rows);
     }
 
     if ((pathname === '/api/parts' || pathname.endsWith('/parts')) && method === 'POST') {
+      await p.query('ALTER TABLE parts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
       const body = await parseJsonBody(req);
       const result = await p.query(
         'INSERT INTO parts (name, sku, unit_cost, stock_qty, min_stock_level, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *',

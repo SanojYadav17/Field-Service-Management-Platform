@@ -18,16 +18,61 @@ import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { Footer } from './components/Footer';
 import { WorkOrder } from './types';
 
+const TAB_TO_PATH: Record<string, string> = {
+  dashboard: '/dashboard',
+  kanban: '/dashboard',
+  reports: '/reports',
+  customers: '/customers',
+  sites: '/sites',
+  inventory: '/inventory',
+  users: '/users',
+  field: '/field',
+  portal: '/portal',
+};
+
+const PATH_TO_TAB: Record<string, string> = {
+  '/': 'dashboard',
+  '/dashboard': 'dashboard',
+  '/reports': 'reports',
+  '/customers': 'customers',
+  '/sites': 'sites',
+  '/inventory': 'inventory',
+  '/users': 'users',
+  '/field': 'field',
+  '/portal': 'portal',
+};
+
 const MainLayout: React.FC = () => {
     const { user, loading, hasRole } = useAuth();
     const [authView, setAuthView] = useState<'login' | 'forgot' | 'reset'>('login');
     const [resetToken, setResetToken] = useState<string>('');
 
-    const [currentTab, setCurrentTab] = useState<string>('dashboard');
+    const [currentTab, setCurrentTabState] = useState<string>(() => {
+      const initialPath = window.location.pathname;
+      return PATH_TO_TAB[initialPath] || 'dashboard';
+    });
     const [selectedWorkOrder, setSelectedWorkOrder] = useState<WorkOrder | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+
+    const navigateTab = (tab: string) => {
+      setCurrentTabState(tab);
+      const targetPath = TAB_TO_PATH[tab] || '/dashboard';
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({}, '', targetPath);
+      }
+    };
+
+    // Listen to browser Back / Forward buttons (popstate)
+    useEffect(() => {
+      const handlePopState = () => {
+        const matchedTab = PATH_TO_TAB[window.location.pathname] || 'dashboard';
+        setCurrentTabState(matchedTab);
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
 
     // Global Cmd+K / Ctrl+K keyboard shortcut listener
     useEffect(() => {
@@ -52,12 +97,12 @@ const MainLayout: React.FC = () => {
         }
     }, []);
 
-    // Set default tab based on user role when user logs in
+    // Set default tab based on user role when user logs in if on root / default
     useEffect(() => {
-        if (user) {
-            if (hasRole('TECHNICIAN')) setCurrentTab('field');
-            else if (hasRole('CUSTOMER')) setCurrentTab('portal');
-            else setCurrentTab('dashboard');
+        if (user && (window.location.pathname === '/' || window.location.pathname === '/dashboard')) {
+            if (hasRole('TECHNICIAN')) navigateTab('field');
+            else if (hasRole('CUSTOMER')) navigateTab('portal');
+            else navigateTab('dashboard');
         }
     }, [user]);
 
@@ -89,7 +134,7 @@ const MainLayout: React.FC = () => {
         <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
             <Navbar
                 currentTab={currentTab}
-                setCurrentTab={setCurrentTab}
+                setCurrentTab={navigateTab}
                 onOpenSearch={() => setIsSearchOpen(true)}
                 onSelectWorkOrder={wo => setSelectedWorkOrder(wo)}
             />
@@ -97,7 +142,7 @@ const MainLayout: React.FC = () => {
             <div className="flex flex-1 overflow-hidden">
                 <Sidebar
                     currentTab={currentTab}
-                    setCurrentTab={setCurrentTab}
+                    setCurrentTab={navigateTab}
                     onOpenCreateModal={() => setIsCreateModalOpen(true)}
                 />
 
@@ -137,7 +182,7 @@ const MainLayout: React.FC = () => {
                                 <h3 className="text-lg font-bold text-slate-700">Page Not Found</h3>
                                 <p className="text-xs text-slate-500">The selected tab could not be loaded.</p>
                                 <button
-                                    onClick={() => setCurrentTab('dashboard')}
+                                    onClick={() => navigateTab('dashboard')}
                                     className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
                                 >
                                     Return to Dashboard
@@ -169,7 +214,7 @@ const MainLayout: React.FC = () => {
                 isOpen={isSearchOpen}
                 onClose={() => setIsSearchOpen(false)}
                 onSelectWorkOrder={wo => setSelectedWorkOrder(wo)}
-                onNavigateTab={tab => setCurrentTab(tab)}
+                onNavigateTab={tab => navigateTab(tab)}
             />
         </div>
     );

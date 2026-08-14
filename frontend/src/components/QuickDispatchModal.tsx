@@ -27,7 +27,7 @@ export const QuickDispatchModal: React.FC<QuickDispatchModalProps> = ({
     if (isOpen) {
       // Filter unassigned open work orders
       const unassigned = workOrders.filter(
-        w => !w.assignedToId && w.status !== 'COMPLETED' && w.status !== 'CANCELLED'
+        w => w.status === 'NEW' && !w.assignedToId
       );
       setUnassignedOrders(unassigned);
 

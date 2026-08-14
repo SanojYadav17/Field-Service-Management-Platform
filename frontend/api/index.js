@@ -325,6 +325,7 @@ export default async function handler(req, res) {
       if (!decoded) return res.status(401).json({ message: 'Unauthorized' });
       const query = `
         SELECT wo.id, wo.code, wo.title, wo.description, wo.priority, wo.status,
+               wo.customer_id as "customerId", wo.site_id as "siteId", wo.assigned_to_id as "assignedToId", wo.created_by_id as "createdById",
                wo.total_parts_cost as "totalPartsCost", wo.total_labour_minutes as "totalLabourMinutes",
                wo.sla_due_at as "slaDueAt", wo.created_at as "createdAt",
                c.name as "customerName", s.name as "siteName", u.full_name as "assignedToName",
@@ -345,6 +346,7 @@ export default async function handler(req, res) {
       if (!decoded) return res.status(401).json({ message: 'Unauthorized' });
       const query = `
         SELECT wo.id, wo.code, wo.title, wo.description, wo.priority, wo.status,
+               wo.customer_id as "customerId", wo.site_id as "siteId", wo.assigned_to_id as "assignedToId", wo.created_by_id as "createdById",
                wo.total_parts_cost as "totalPartsCost", wo.total_labour_minutes as "totalLabourMinutes",
                wo.sla_due_at as "slaDueAt", wo.created_at as "createdAt",
                c.name as "customerName", s.name as "siteName", u.full_name as "assignedToName"
@@ -361,6 +363,7 @@ export default async function handler(req, res) {
     if ((pathname === '/api/work-orders' || pathname.endsWith('/work-orders')) && method === 'GET') {
       const query = `
         SELECT wo.id, wo.code, wo.title, wo.description, wo.priority, wo.status,
+               wo.customer_id as "customerId", wo.site_id as "siteId", wo.assigned_to_id as "assignedToId", wo.created_by_id as "createdById",
                wo.total_parts_cost as "totalPartsCost", wo.total_labour_minutes as "totalLabourMinutes",
                wo.sla_due_at as "slaDueAt", wo.created_at as "createdAt",
                c.name as "customerName", s.name as "siteName", u.full_name as "assignedToName",

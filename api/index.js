@@ -376,8 +376,8 @@ module.exports = async (req, res) => {
       const body = await parseJsonBody(req);
       const code = `WO-${Math.floor(100000 + Math.random() * 900000)}`;
       const result = await p.query(
-        `INSERT INTO work_orders (code, title, description, priority, status, customer_id, site_id, assigned_to_id, sla_due_at)
-         VALUES ($1, $2, $3, $4, 'NEW', $5, $6, $7, NOW() + INTERVAL '24 hour') RETURNING *`,
+        `INSERT INTO work_orders (code, title, description, priority, status, customer_id, site_id, assigned_to_id, sla_due_at, created_at)
+         VALUES ($1, $2, $3, $4, 'NEW', $5, $6, $7, NOW() + INTERVAL '24 hour', NOW()) RETURNING *`,
         [code, body.title, body.description, body.priority || 'MEDIUM', body.customerId || 1, body.siteId || 1, body.assignedToId || null]
       );
       return res.status(201).json(result.rows[0]);

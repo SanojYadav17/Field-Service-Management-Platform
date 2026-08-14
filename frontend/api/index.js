@@ -267,6 +267,31 @@ export default async function handler(req, res) {
       });
     }
 
+    if ((pathname === '/api/auth/register' || pathname.endsWith('/auth/register')) && method === 'POST') {
+      const { fullName, email, password, role, phone } = await parseJsonBody(req);
+      if (!fullName || !email || !password) {
+        return res.status(400).json({ message: 'Full name, email and password are required' });
+      }
+      const existingUser = await p.query('SELECT * FROM users WHERE email = $1', [email]);
+      if (existingUser.rows.length > 0) {
+        return res.status(400).json({ message: 'User already exists with this email' });
+      }
+      const hash = await bcrypt.hash(password, 10);
+      const insertRes = await p.query(
+        'INSERT INTO users (full_name, email, password_hash, role, phone, active) VALUES ($1, $2, $3, $4, $5, true) RETURNING id, full_name as "fullName", email, role',
+        [fullName, email, hash, role || 'CUSTOMER', phone || '']
+      );
+      const newUser = insertRes.rows[0];
+      const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role, fullName: newUser.fullName }, JWT_SECRET, { expiresIn: '7d' });
+      return res.status(200).json({
+        token,
+        userId: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        role: newUser.role
+      });
+    }
+
     if ((pathname === '/api/auth/me' || pathname.endsWith('/auth/me')) && method === 'GET') {
       const decoded = authenticateToken(req);
       if (!decoded) return res.status(401).json({ message: 'Unauthorized' });

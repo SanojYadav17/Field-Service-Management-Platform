@@ -17,6 +17,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectWorkOrder 
 
   const loadData = async () => {
     setLoading(true);
+    setMetrics(null);
     try {
       const [m, wos] = await Promise.all([
         api.getDashboardMetrics(),
@@ -37,9 +38,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectWorkOrder 
 
   if (loading && !metrics) {
     return (
-      <div className="p-16 flex flex-col items-center justify-center text-slate-500 text-xs space-y-3">
-        <RefreshCw className="animate-spin text-sky-600" size={24} />
-        <span className="font-mono">Syncing operational dispatch telemetry...</span>
+      <div className="p-24 flex flex-col items-center justify-center text-slate-500 text-xs space-y-4">
+        <RefreshCw className="animate-spin text-sky-600" size={32} />
+        <span className="font-mono font-medium text-slate-600">Refreshing operational telemetry & work orders...</span>
       </div>
     );
   }
@@ -80,8 +81,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectWorkOrder 
         </div>
       </div>
 
-      <div className={`space-y-7 transition-opacity duration-300 ${loading ? 'opacity-60 pointer-events-none' : 'opacity-100'}`}>
-        {/* Emergency SLA Breached Alert Banner */}
+      {/* Emergency SLA Breached Alert Banner */}
       {breachedOrders.length > 0 && (
         <div className="p-4 bg-red-500/10 border border-red-200 text-red-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
@@ -180,7 +180,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onSelectWorkOrder 
           </div>
         </div>
         <KanbanBoard workOrders={workOrders} onSelectWorkOrder={onSelectWorkOrder} onRefresh={loadData} />
-      </div>
       </div>
 
       {/* Quick Dispatch Modal */}

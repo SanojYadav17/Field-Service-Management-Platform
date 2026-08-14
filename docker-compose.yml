@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  keystone-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: keystone_field_os
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-mute-recipe-ax52n483-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_zNm4d6neYoub
+    restart: unless-stopped

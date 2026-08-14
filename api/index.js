@@ -275,7 +275,7 @@ module.exports = async (req, res) => {
       }
       const hash = await bcrypt.hash(password, 10);
       const insertRes = await p.query(
-        'INSERT INTO users (full_name, email, password_hash, role, phone, active) VALUES ($1, $2, $3, $4, $5, true) RETURNING id, full_name as "fullName", email, role',
+        'INSERT INTO users (full_name, email, password_hash, role, phone, active, created_at) VALUES ($1, $2, $3, $4, $5, true, NOW()) RETURNING id, full_name as "fullName", email, role',
         [fullName, email, hash, role || 'CUSTOMER', phone || '']
       );
       const newUser = insertRes.rows[0];
@@ -394,7 +394,7 @@ module.exports = async (req, res) => {
     if ((pathname === '/api/customers' || pathname.endsWith('/customers')) && method === 'POST') {
       const body = await parseJsonBody(req);
       const result = await p.query(
-        'INSERT INTO customers (name, code, contact_email, contact_phone, address, active) VALUES ($1, $2, $3, $4, $5, true) RETURNING *',
+        'INSERT INTO customers (name, code, contact_email, contact_phone, address, active, created_at) VALUES ($1, $2, $3, $4, $5, true, NOW()) RETURNING *',
         [body.name, body.code, body.contactEmail, body.contactPhone, body.address]
       );
       return res.status(201).json(result.rows[0]);
@@ -411,7 +411,7 @@ module.exports = async (req, res) => {
     if ((pathname === '/api/sites' || pathname.endsWith('/sites')) && method === 'POST') {
       const body = await parseJsonBody(req);
       const result = await p.query(
-        'INSERT INTO sites (name, address, customer_id, contact_person, active) VALUES ($1, $2, $3, $4, true) RETURNING *',
+        'INSERT INTO sites (name, address, customer_id, contact_person, active, created_at) VALUES ($1, $2, $3, $4, true, NOW()) RETURNING *',
         [body.name, body.address, body.customerId, body.contactPerson]
       );
       return res.status(201).json(result.rows[0]);

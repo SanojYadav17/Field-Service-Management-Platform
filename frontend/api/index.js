@@ -278,7 +278,7 @@ export default async function handler(req, res) {
       }
       const hash = await bcrypt.hash(password, 10);
       const insertRes = await p.query(
-        'INSERT INTO users (full_name, email, password_hash, role, phone, active) VALUES ($1, $2, $3, $4, $5, true) RETURNING id, full_name as "fullName", email, role',
+        'INSERT INTO users (full_name, email, password_hash, role, phone, active, created_at) VALUES ($1, $2, $3, $4, $5, true, NOW()) RETURNING id, full_name as "fullName", email, role',
         [fullName, email, hash, role || 'CUSTOMER', phone || '']
       );
       const newUser = insertRes.rows[0];

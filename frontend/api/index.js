@@ -490,11 +490,13 @@ export default async function handler(req, res) {
     // CUSTOMERS & SITES ROUTES
     // ----------------------------------------------------
     if ((pathname === '/api/customers' || pathname.endsWith('/customers')) && method === 'GET') {
+      await p.query('ALTER TABLE customers ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255)');
       const customers = await p.query('SELECT id, name, code, contact_person as "contactPerson", contact_email as "contactEmail", contact_phone as "contactPhone", address, active FROM customers ORDER BY id ASC');
       return res.status(200).json(customers.rows);
     }
 
     if ((pathname === '/api/customers' || pathname.endsWith('/customers')) && method === 'POST') {
+      await p.query('ALTER TABLE customers ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255)');
       const body = await parseJsonBody(req);
       const result = await p.query(
         'INSERT INTO customers (name, code, contact_person, contact_email, contact_phone, address, active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, true, NOW(), NOW()) RETURNING *',

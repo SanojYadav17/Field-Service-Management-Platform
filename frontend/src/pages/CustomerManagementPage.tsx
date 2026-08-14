@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Customer, Site } from '../types';
 import { api } from '../services/api';
-import { Building2, Plus, Mail, Phone, MapPin, X, Building, Map, Search } from 'lucide-react';
+import { Building2, Plus, Mail, Phone, MapPin, X, Building, Map, Search, User } from 'lucide-react';
 import { AddressInput } from '../components/AddressInput';
 
 interface CustomerManagementPageProps {
@@ -60,6 +60,7 @@ export const CustomerManagementPage: React.FC<CustomerManagementPageProps> = ({ 
       await api.createCustomer({
         name,
         code,
+        contactPerson,
         contactEmail: email,
         contactPhone: phone,
         address,
@@ -172,6 +173,7 @@ export const CustomerManagementPage: React.FC<CustomerManagementPageProps> = ({ 
                     </span>
                   </div>
                   <div className="text-xs text-slate-600 space-y-1.5 pt-1">
+                    {c.contactPerson && <div className="flex items-center gap-2"><User size={13} className="text-sky-600 shrink-0" /> <span className="font-semibold text-slate-800">{c.contactPerson}</span></div>}
                     <div className="flex items-center gap-2"><Mail size={13} className="text-slate-400 shrink-0" /> <span className="truncate">{c.contactEmail}</span></div>
                     {c.contactPhone && <div className="flex items-center gap-2"><Phone size={13} className="text-slate-400 shrink-0" /> <span>{c.contactPhone}</span></div>}
                     {c.address && <div className="flex items-center gap-2"><MapPin size={13} className="text-slate-400 shrink-0" /> <span className="truncate">{c.address}</span></div>}
@@ -236,20 +238,24 @@ export const CustomerManagementPage: React.FC<CustomerManagementPageProps> = ({ 
               {modalType === 'customer' ? (
                 <>
                   <div>
-                    <label className="ks-label">Company Name *</label>
-                    <input type="text" value={name} onChange={e => handleNameChange(e.target.value)} className="ks-input-plain" required />
+                    <label className="ks-label">Company / Organization Name *</label>
+                    <input type="text" value={name} onChange={e => handleNameChange(e.target.value)} className="ks-input-plain" placeholder="e.g. Reliance Corporate Park" required />
                   </div>
                   <div>
-                    <label className="ks-label">Unique Code (e.g. CUST-ACME) *</label>
+                    <label className="ks-label">Contact Person Name (Primary Representative) *</label>
+                    <input type="text" value={contactPerson} onChange={e => setContactPerson(e.target.value)} className="ks-input-plain" placeholder="e.g. Sarah Connor / Rajesh Sharma" required />
+                  </div>
+                  <div>
+                    <label className="ks-label">Unique Code (e.g. CUST-RELIANCE) *</label>
                     <input type="text" value={code} onChange={e => setCode(e.target.value)} className="ks-input-plain" required />
                   </div>
                   <div>
                     <label className="ks-label">Contact Email *</label>
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="ks-input-plain" required />
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="ks-input-plain" placeholder="e.g. infra.ops@ril.com" required />
                   </div>
                   <div>
                     <label className="ks-label">Contact Phone</label>
-                    <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="ks-input-plain" />
+                    <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="ks-input-plain" placeholder="e.g. +91-9876543210" />
                   </div>
                   <div>
                     <label className="ks-label">HQ Address</label>

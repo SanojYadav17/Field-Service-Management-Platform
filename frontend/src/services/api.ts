@@ -154,7 +154,7 @@ export const api = {
     return handleResponse<Customer[]>(res);
   },
 
-  createCustomer: async (data: { name: string; code: string; contactEmail: string; contactPhone?: string; address?: string }): Promise<Customer> => {
+  createCustomer: async (data: { name: string; code: string; contactPerson?: string; contactEmail: string; contactPhone?: string; address?: string }): Promise<Customer> => {
     const res = await fetch(`${API_BASE}/customers`, {
       method: 'POST',
       headers: getHeaders(),

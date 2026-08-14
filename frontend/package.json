@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && node -e \"const fs = require('fs'); fs.mkdirSync('../src/main/resources/static', {recursive: true}); fs.cpSync('dist', '../src/main/resources/static', {recursive: true});\"",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {

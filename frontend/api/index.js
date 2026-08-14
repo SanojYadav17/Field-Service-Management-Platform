@@ -589,26 +589,39 @@ export default async function handler(req, res) {
         SELECT u.id, u.full_name as "fullName", u.email,
                COUNT(CASE WHEN wo.status IN ('COMPLETED', 'CLOSED') THEN 1 END) as "completedTickets",
                COUNT(CASE WHEN wo.status NOT IN ('COMPLETED', 'CLOSED', 'CANCELLED') THEN 1 END) as "activeTickets",
-               COALESCE(SUM(wo.total_labour_minutes), 0) as "totalLabourMinutes",
-               COALESCE(SUM(wo.total_parts_cost), 0)::float as "partsValuationUsed"
+               COUNT(wo.id) as "totalAssigned",
+               COUNT(CASE WHEN wo.sla_due_at IS NOT NULL AND wo.sla_due_at < NOW() AND wo.status NOT IN ('COMPLETED', 'CLOSED', 'CANCELLED') THEN 1 END) as "breachedTickets",
+               COALESCE((SELECT SUM(tl.minutes) FROM time_logs tl WHERE tl.technician_id = u.id), COALESCE(SUM(wo.total_labour_minutes), 0)) as "totalLabourMinutes",
+               COALESCE(AVG(CASE WHEN wo.status IN ('COMPLETED', 'CLOSED') THEN EXTRACT(EPOCH FROM (wo.updated_at - wo.created_at))/3600 END), 3.5) as "avgHours"
         FROM users u
         LEFT JOIN work_orders wo ON u.id = wo.assigned_to_id
         WHERE u.role = 'TECHNICIAN'
         GROUP BY u.id, u.full_name, u.email
-        ORDER BY "completedTickets" DESC
+        ORDER BY "completedTickets" DESC, "totalLabourMinutes" DESC
       `);
 
-      const technicianLeaderboard = techsRes.rows.map(t => ({
-        id: t.id,
-        fullName: t.fullName,
-        email: t.email,
-        completedTickets: parseInt(t.completedTickets, 10) || 0,
-        activeTickets: parseInt(t.activeTickets, 10) || 0,
-        totalLabourMinutes: parseInt(t.totalLabourMinutes, 10) || 0,
-        avgResolutionHours: 4.2,
-        partsValuationUsed: parseFloat(t.partsValuationUsed) || 0,
-        efficiencyRating: 94.5
-      }));
+      const technicianLeaderboard = techsRes.rows.map(t => {
+        const completed = parseInt(t.completedTickets, 10) || 0;
+        const totalAssigned = parseInt(t.totalAssigned, 10) || 0;
+        const breached = parseInt(t.breachedTickets, 10) || 0;
+        const labourMins = parseInt(t.totalLabourMinutes, 10) || 0;
+        const avgH = parseFloat(parseFloat(t.avgHours).toFixed(1)) || 3.5;
+        const eff = totalAssigned > 0 
+          ? parseFloat((((totalAssigned - breached) / totalAssigned) * 100).toFixed(1))
+          : 100.0;
+
+        return {
+          id: t.id,
+          fullName: t.fullName,
+          email: t.email,
+          completedTickets: completed,
+          activeTickets: parseInt(t.activeTickets, 10) || 0,
+          totalLabourMinutes: labourMins,
+          avgResolutionHours: avgH,
+          partsValuationUsed: 0,
+          efficiencyRating: eff
+        };
+      });
 
       const priorityRes = await p.query(`
         SELECT priority,

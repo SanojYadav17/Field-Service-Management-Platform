@@ -278,7 +278,7 @@ export default async function handler(req, res) {
       }
       const hash = await bcrypt.hash(password, 10);
       const insertRes = await p.query(
-        'INSERT INTO users (full_name, email, password_hash, role, phone, active, created_at) VALUES ($1, $2, $3, $4, $5, true, NOW()) RETURNING id, full_name as "fullName", email, role',
+        'INSERT INTO users (full_name, email, password_hash, role, phone, active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW()) RETURNING id, full_name as "fullName", email, role',
         [fullName, email, hash, role || 'CUSTOMER', phone || '']
       );
       const newUser = insertRes.rows[0];
@@ -381,8 +381,8 @@ export default async function handler(req, res) {
       const code = `WO-${Math.floor(100000 + Math.random() * 900000)}`;
       const createdById = decoded ? decoded.id : 1;
       const result = await p.query(
-        `INSERT INTO work_orders (code, title, description, priority, status, customer_id, site_id, assigned_to_id, created_by_id, sla_due_at, total_parts_cost, total_labour_minutes, created_at)
-         VALUES ($1, $2, $3, $4, 'NEW', $5, $6, $7, $8, NOW() + INTERVAL '24 hour', 0.00, 0, NOW()) RETURNING *`,
+        `INSERT INTO work_orders (code, title, description, priority, status, customer_id, site_id, assigned_to_id, created_by_id, sla_due_at, total_parts_cost, total_labour_minutes, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, 'NEW', $5, $6, $7, $8, NOW() + INTERVAL '24 hour', 0.00, 0, NOW(), NOW()) RETURNING *`,
         [code, body.title, body.description || '', body.priority || 'MEDIUM', body.customerId || 1, body.siteId || 1, body.assignedToId || null, createdById]
       );
       return res.status(201).json(result.rows[0]);
@@ -399,7 +399,7 @@ export default async function handler(req, res) {
     if ((pathname === '/api/customers' || pathname.endsWith('/customers')) && method === 'POST') {
       const body = await parseJsonBody(req);
       const result = await p.query(
-        'INSERT INTO customers (name, code, contact_email, contact_phone, address, active) VALUES ($1, $2, $3, $4, $5, true) RETURNING *',
+        'INSERT INTO customers (name, code, contact_email, contact_phone, address, active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, true, NOW(), NOW()) RETURNING *',
         [body.name, body.code, body.contactEmail, body.contactPhone, body.address]
       );
       return res.status(201).json(result.rows[0]);
@@ -416,7 +416,7 @@ export default async function handler(req, res) {
     if ((pathname === '/api/sites' || pathname.endsWith('/sites')) && method === 'POST') {
       const body = await parseJsonBody(req);
       const result = await p.query(
-        'INSERT INTO sites (name, address, customer_id, contact_person, active) VALUES ($1, $2, $3, $4, true) RETURNING *',
+        'INSERT INTO sites (name, address, customer_id, contact_person, active, created_at, updated_at) VALUES ($1, $2, $3, $4, true, NOW(), NOW()) RETURNING *',
         [body.name, body.address, body.customerId, body.contactPerson]
       );
       return res.status(201).json(result.rows[0]);
@@ -433,7 +433,7 @@ export default async function handler(req, res) {
     if ((pathname === '/api/parts' || pathname.endsWith('/parts')) && method === 'POST') {
       const body = await parseJsonBody(req);
       const result = await p.query(
-        'INSERT INTO parts (name, sku, unit_cost, stock_qty, min_stock_level) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        'INSERT INTO parts (name, sku, unit_cost, stock_qty, min_stock_level, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *',
         [body.name, body.sku, body.unitCost, body.stockQty, body.minStockLevel || 5]
       );
       return res.status(201).json(result.rows[0]);
